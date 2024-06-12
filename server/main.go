@@ -57,7 +57,7 @@ func handlerCotacao(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
 	// Cria um contexto com um timeout
-	ctx, cancel := context.WithTimeout(context.Background(), 200*time.Microsecond)
+	ctx, cancel := context.WithTimeout(context.Background(), 200*time.Millisecond)
 	defer cancel()
 
 	// Faz pesquisa numa api requisitando a cotação
