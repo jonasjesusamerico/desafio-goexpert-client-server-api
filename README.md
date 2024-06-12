@@ -26,7 +26,7 @@ cd desafio-goexpert-client-server-api
 ### Passo 2: Inicie o Servidor
 
 Execute o arquivo `server.go` para iniciar o servidor HTTP na porta 8080:
-
+ 
 ```sh
 go run server.go
 ```
