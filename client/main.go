@@ -22,7 +22,7 @@ type MessageError struct {
 }
 
 func main() {
-	ctx, cancel := context.WithTimeout(context.Background(), 300*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 300*time.Microsecond)
 	defer cancel()
 
 	rate, err := buscaCotacao(ctx)
