@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"log"
 	"net/http"
 	"os"
 	"time"
@@ -17,17 +16,18 @@ type Response struct {
 	Bid string `json:"bid"`
 }
 
-type MessageError struct {
-	Message string `json:"message"`
+type ErrorRequest struct {
+	Error   string `json:"error"`
+	Details string `json:"details,omitempty"`
 }
 
 func main() {
-	ctx, cancel := context.WithTimeout(context.Background(), 300*time.Microsecond)
+	ctx, cancel := context.WithTimeout(context.Background(), 300*time.Millisecond)
 	defer cancel()
 
 	rate, err := buscaCotacao(ctx)
 	if err != nil {
-		log.Printf("Falha ao busca cotação do cambio: " + err.Error())
+		fmt.Println("Erro ao buscar dados ao servidor: " + err.Error())
 		return
 	}
 
@@ -38,6 +38,7 @@ func main() {
 	}
 	defer file.Close()
 
+	fmt.Println("Cotação do dólar: " + rate)
 	_, err = file.WriteString("Dólar: " + rate)
 	if err != nil {
 		fmt.Println("Falha ao escrever a cotação no arquivo:", err)
@@ -54,12 +55,12 @@ func buscaCotacao(ctx context.Context) (string, error) {
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		var response MessageError
+		var response ErrorRequest
 		if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
 			return "", err
 		}
 
-		return "", errors.New(response.Message)
+		return "", errors.New(response.Error + " - " + response.Details)
 	}
 
 	var response Response

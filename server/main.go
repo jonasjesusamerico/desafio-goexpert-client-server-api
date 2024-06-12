@@ -53,6 +53,11 @@ type Cambio struct {
 	USDBRL USDBRL `json:"USDBRL"`
 }
 
+type ErrorResponse struct {
+	Error   string `json:"error"`
+	Details string `json:"details,omitempty"`
+}
+
 func handlerCotacao(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
@@ -63,13 +68,17 @@ func handlerCotacao(w http.ResponseWriter, r *http.Request) {
 	// Faz pesquisa numa api requisitando a cotação
 	rate, err := buscaCotacaoExterna(ctx)
 	if err != nil {
-		http.Error(w, "{\"message\": \"Servidor demorou muito a responder a requisição\"}", http.StatusRequestTimeout)
+		w.WriteHeader(http.StatusRequestTimeout)
+		json.NewEncoder(w).Encode(ErrorResponse{Error: "Servidor demorou muito a responder a requisição", Details: err.Error()})
+		log.Println("Servidor demorou muito a responder a requisição:", err.Error())
 		return
 	}
 
 	db, err := databaseConnection()
 	if err != nil {
-		log.Fatal(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(ErrorResponse{Error: "Erro interno", Details: err.Error()})
+		return
 	}
 	defer db.Close()
 
@@ -77,8 +86,13 @@ func handlerCotacao(w http.ResponseWriter, r *http.Request) {
 	defer cancel()
 
 	if err := salvaCambio(ctx, db, rate); err != nil {
-		log.Println("Falha ao salvar a cotação do cambio:", err)
+		w.WriteHeader(http.StatusRequestTimeout)
+		json.NewEncoder(w).Encode(ErrorResponse{Error: "Falha ao salvar registro da cotação", Details: err.Error()})
+		log.Println("Falha ao salvar registro da cotação:", err.Error())
+		return
 	}
+
+	w.WriteHeader(http.StatusOK)
 
 	response := map[string]string{"bid": rate}
 	json.NewEncoder(w).Encode(response)
